@@ -4,7 +4,7 @@ import sys
 from setuptools import setup
 import versioneer
 
-SUBPACKAGE = "TODO"
+SUBPACKAGE = "dcm2niix"
 
 # Give setuptools a hint to complain if it's too old a version
 # 30.3.0 allows us to put most metadata in setup.cfg
