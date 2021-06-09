@@ -8,23 +8,22 @@ from pydra.engine.specs import (
 input_fields = [
     (
         "in_dir",
-        File,
+        Directory,
         {
-                'argstr': "{in_dir}",
-                'position': -1,
-                'help_string': (
-                    "The directory containing the DICOMs to be converted"),
-                "mandatory": True
+            'argstr': "{in_dir}",
+            'position': -1,
+            'help_string': (
+                "The directory containing the DICOMs to be converted"),
+            "mandatory": True
         },
     ),
     (
         "out_dir",
         Directory,
         {
-                'argstr': '-o {out_dir}',
-                        'help_string': (
-                            'output directory'),
-                        "mandatory": True
+            'argstr': '-o {out_dir}',
+            'help_string': 'output directory',
+            "mandatory": True
         },
     ),
     (
@@ -32,9 +31,8 @@ input_fields = [
         bool,
         'out_file',
         {
-                'argstr': '-f {filename}',
-                    'usedefault': True,
-                    'help_string': "The output name for the file"
+            'argstr': '-f {filename}',
+            'help_string': "The output name for the file"
         },
     ),
     (
@@ -42,9 +40,9 @@ input_fields = [
         int,
         6,
         {
-                'argstr': '-{compression_level}',
-                'choices': tuple(range(1, 10)),
-                'help_string': 'gz compression level '
+            'argstr': '-{compression_level}',
+            'allowed_values': tuple(range(1, 10)),
+            'help_string': 'gz compression level '
         },
     ),
     (
@@ -52,8 +50,8 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-a {adjacent}',
-                    'help_string': 'adjacent DICOMs '
+            'argstr': '-a {adjacent}',
+            'help_string': 'adjacent DICOMs '
         },
     ),
     (
@@ -61,9 +59,9 @@ input_fields = [
         str,
         'y',
         {
-                'argstr': '-b {bids}',
-                    'choices': ('y', 'n', 'o'),
-                    'help_string': 'BIDS sidecar  [o=only: no NIfTI]'
+            'argstr': '-b {bids}',
+            'allowed_values': ('y', 'n', 'o'),
+            'help_string': 'BIDS sidecar  [o=only: no NIfTI]'
         },
     ),
     (
@@ -71,17 +69,17 @@ input_fields = [
         str,
         'y',
         {
-                'argstr': '-ba {anonymize_bids}',
-                    'choices': ('y', 'n'),
-                    'help_string': 'anonymize BIDS '
+            'argstr': '-ba {anonymize_bids}',
+            'allowed_values': ('y', 'n'),
+            'help_string': 'anonymize BIDS '
         },
     ),
     (
         "store_comments",
         bool,
         {
-                'argstr': '-c',
-                    'help_string': 'comment stored in NIfTI aux_file '
+            'argstr': '-c',
+            'help_string': 'comment stored in NIfTI aux_file '
         },
     ),
     (
@@ -89,10 +87,10 @@ input_fields = [
         int,
         5,
         {
-                'argstr': '-d {search_depth}',
-                    'help_string': (
-                        'directory search depth. Convert DICOMs in '
-                        'sub-folders of ' 'in_folder? ')
+            'argstr': '-d {search_depth}',
+            'help_string': (
+                'directory search depth. Convert DICOMs in '
+                'sub-folders of ' 'in_folder? ')
         },
     ),
     (
@@ -100,9 +98,9 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-e {export_nrrd}',
-                    'choices': ('y', 'n'),
-                    'help_string': 'export as NRRD instead of NIfTI '
+            'argstr': '-e {export_nrrd}',
+            'allowed_values': ('y', 'n'),
+            'help_string': 'export as NRRD instead of NIfTI '
         },
     ),
     (
@@ -110,11 +108,11 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-g {generate_defaults}',
-                    'choices': ('y', 'n', 'o', 'i'),
-                    'help_string': (
-                        'generate defaults file  [o=only: reset and write '
-                        'defaults; i=ignore: reset defaults]')
+            'argstr': '-g {generate_defaults}',
+            'allowed_values': ('y', 'n', 'o', 'i'),
+            'help_string': (
+                'generate defaults file  [o=only: reset and write '
+                'defaults; i=ignore: reset defaults]')
         },
     ),
     (
@@ -122,9 +120,9 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-i {ignore_derived}',
-                    'choices': ('y', 'n'),
-                    'help_string': 'ignore derived, localizer and 2D images '
+            'argstr': '-i {ignore_derived}',
+            'allowed_values': ('y', 'n'),
+            'help_string': 'ignore derived, localizer and 2D images '
         },
     ),
     (
@@ -132,11 +130,11 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-l {losslessly_scale}',
-                    'choices': ('y', 'n', 'o'),
-                    'help_string': (
-                        'losslessly scale 16-bit integers to use dynamic range '
-                        '[yes=scale, no=no, but uint16->int16, o=original]')
+            'argstr': '-l {losslessly_scale}',
+            'allowed_values': ('y', 'n', 'o'),
+            'help_string': (
+                'losslessly scale 16-bit integers to use dynamic range '
+                '[yes=scale, no=no, but uint16->int16, o=original]')
         },
     ),
     (
@@ -144,21 +142,21 @@ input_fields = [
         int,
         2,
         {
-                'argstr': '-m {merge_2d}',
-                    'choices': ('y', 'n', '0', '1', '2'),
-                    'help_string': (
-                        'merge 2D slices from same series regardless of echo, '
-                        'exposure, etc.  no, yes, auto')
+            'argstr': '-m {merge_2d}',
+            'allowed_values': ('y', 'n', '0', '1', '2'),
+            'help_string': (
+                'merge 2D slices from same series regardless of echo, '
+                'exposure, etc.  no, yes, auto')
         },
     ),
     (
         "only",
         int,
         {
-                'argstr': '-n {only}',
-                    'help_string': (
-                        'only convert this series CRC number - can be used up '
-                        'to 16 times')
+            'argstr': '-n {only}',
+            'help_string': (
+                'only convert this series CRC number - can be used up '
+                'to 16 times')
         },
     ),
     (
@@ -166,8 +164,8 @@ input_fields = [
         str,
         'y',
         {
-                'argstr': '-p {philips_scaling}',
-                    'help_string': 'Philips precise float (not display) scaling'
+            'argstr': '-p {philips_scaling}',
+            'help_string': 'Philips precise float (not display) scaling'
         },
     ),
     (
@@ -175,9 +173,9 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-r {rename_instead}',
-                    'choices': ('y', 'n'),
-                    'help_string': 'rename instead of convert DICOMs '
+            'argstr': '-r {rename_instead}',
+            'allowed_values': ('y', 'n'),
+            'help_string': 'rename instead of convert DICOMs '
         },
     ),
     (
@@ -185,11 +183,11 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-s {single_file_mode}',
-                    'choices': ('y', 'n'),
-                    'help_string': (
-                        'single file mode, do not convert other images in '
-                        'folder ')
+            'argstr': '-s {single_file_mode}',
+            'allowed_values': ('y', 'n'),
+            'help_string': (
+                'single file mode, do not convert other images in '
+                'folder ')
         },
     ),
     (
@@ -197,18 +195,18 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-t {private_text_notes}',
-                    'choices': ('y', 'n'),
-                    'help_string': (
-                        'text notes includes private patient details')
+            'argstr': '-t {private_text_notes}',
+            'allowed_values': ('y', 'n'),
+            'help_string': (
+                'text notes includes private patient details')
         },
     ),
     (
         "up_to_date_check",
         bool,
         {
-                'argstr': '-u',
-                    'help_string': 'up-to-date check'
+            'argstr': '-u',
+            'help_string': 'up-to-date check'
         },
     ),
     (
@@ -216,9 +214,9 @@ input_fields = [
         str,
         '0',
         {
-                'argstr': '-v {verbose}',
-                    'choices': ('y', 'n', '0', '1', '2'),
-                    'help_string': 'verbose  no, yes, logorrheic'
+            'argstr': '-v {verbose}',
+            'allowed_values': ('y', 'n', '0', '1', '2'),
+            'help_string': 'verbose  no, yes, logorrheic'
         },
     ),
     (
@@ -226,11 +224,11 @@ input_fields = [
         int,
         2,
         {
-                'argstr': '-w {name_conflicts}',
-                    'choices': tuple(range(3)),
-                    'help_string': (
-                        'write behavior for name conflicts '
-                        '[0=skip duplicates, 1=overwrite, 2=add suffix]')
+            'argstr': '-w {name_conflicts}',
+            'allowed_values': tuple(range(3)),
+            'help_string': (
+                'write behavior for name conflicts '
+                '[0=skip duplicates, 1=overwrite, 2=add suffix]')
         },
     ),
     (
@@ -238,11 +236,11 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-x {crop_3d}',
-                    'choices': ('y', 'n', 'i'),
-                    'help_string': (
-                        'crop 3D acquisitions (use ignore to neither crop nor '
-                        'rotate 3D acquistions)')
+            'argstr': '-x {crop_3d}',
+            'allowed_values': ('y', 'n', 'i'),
+            'help_string': (
+                'crop 3D acquisitions (use ignore to neither crop nor '
+                'rotate 3D acquistions)')
         },
     ),
     (
@@ -250,11 +248,11 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '-z {compress}',
-                    'choices': ('y', 'o', 'i', 'n', '3'),
-                    'help_string': (
-                        'gz compress images  [y=pigz, o=optimal pigz, '
-                        'i=internal:miniz, n=no, 3=no,3D]')
+            'argstr': '-z {compress}',
+            'allowed_values': ('y', 'o', 'i', 'n', '3'),
+            'help_string': (
+                'gz compress images  [y=pigz, o=optimal pigz, '
+                'i=internal:miniz, n=no, 3=no,3D]')
         },
     ),
     (
@@ -262,10 +260,10 @@ input_fields = [
         str,
         'o',
         {
-                'argstr': '--big-endian {big_endian}',
-                    'choices': ('y', 'n', 'o'),
-                    'help_string':
-                    'byte order  [y=big-end, n=little-end, o=optimal/native]'
+            'argstr': '--big-endian {big_endian}',
+            'allowed_values': ('y', 'n', 'o'),
+            'help_string':
+            'byte order  [y=big-end, n=little-end, o=optimal/native]'
         },
     ),
     (
@@ -273,39 +271,39 @@ input_fields = [
         str,
         'n',
         {
-                'argstr': '--progress {progress}',
-                    'choices': ('y', 'n'),
-                    'help_string': 'Slicer format progress information '
+            'argstr': '--progress {progress}',
+            'allowed_values': ('y', 'n'),
+            'help_string': 'Slicer format progress information '
         },
     ),
     (
         "terse",
         bool,
         {
-                'argstr': '--terse',
-                    'help_string': 'omit filename post-fixes '
+            'argstr': '--terse',
+            'help_string': 'omit filename post-fixes '
         },
     ),
     (
         "version",
         bool,
         {
-                'argstr': '--version',
-                    'help_string': 'report version'
+            'argstr': '--version',
+            'help_string': 'report version'
         },
     ),
     (
         "xml",
         bool,
         {
-                'argstr': '--xml',
-                    'help_string': 'Slicer format features'
+            'argstr': '--xml',
+            'help_string': 'Slicer format features'
         },
     ),
 ]
 
 Dcm2NiixInputSpec = SpecInfo(
-    fields=input_fields, bases=(ShellOutSpec,))
+    name="Dcm2NiixInputs", fields=input_fields, bases=(ShellSpec,))
 
    
 output_fields = [
@@ -313,16 +311,16 @@ output_fields = [
         'out_file',
         File,
         {
-                "help_string": "output NIfTI image",
-                "output_file_template": "{out_dir}/{filename}.nii.gz"
+            "help_string": "output NIfTI image",
+            "output_file_template": "{out_dir}/{filename}.nii.gz"
         },
     ),
     (
         "out_json",
         File,
         {       
-                "help_string": "output BIDS side-car JSON",
-                "output_file_template": "{out_dir}/{filename}.json"
+            "help_string": "output BIDS side-car JSON",
+            "output_file_template": "{out_dir}/{filename}.json"
         },
     ),
 ]
