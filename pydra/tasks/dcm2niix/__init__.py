@@ -3,11 +3,9 @@ This is a basic doctest demonstrating that the package and pydra can both be suc
 imported.
 
 >>> import pydra.engine
->>> import pydra.tasks.TODO
+>>> import pydra.tasks.dcm2niix
 """
 from ._version import get_versions
 
 __version__ = get_versions()["version"]
 del get_versions
-
-from .base import Dcm2Niix
