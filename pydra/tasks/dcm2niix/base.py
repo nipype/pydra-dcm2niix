@@ -19,7 +19,7 @@ input_fields = [
     ),
     (
         "out_dir",
-        Directory,
+        str,
         {
             'argstr': '-o {out_dir}',
             'help_string': 'output directory',
@@ -28,7 +28,7 @@ input_fields = [
     ),
     (
         "filename",
-        bool,
+        str,
         'out_file',
         {
             'argstr': '-f {filename}',
@@ -323,6 +323,22 @@ output_fields = [
             "output_file_template": "{out_dir}/{filename}.json"
         },
     ),
+    (
+        "out_bval",
+        File,
+        {       
+            "help_string": "output dMRI b-values in FSL format",
+            "output_file_template": "{out_dir}/{filename}.bval"
+        },
+    ),
+    (
+        "out_bvec",
+        File,
+        {       
+            "help_string": "output dMRI b-bectors in FSL format",
+            "output_file_template": "{out_dir}/{filename}.bvec"
+        },
+    ),
 ]
 
 Dcm2NiixOutputSpec = SpecInfo(
@@ -339,6 +355,6 @@ class Dcm2Niix(ShellCommandTask):
     >>> task.cmdline
     'dcm2niix -f out_file -o test/output test_dicoms'
     """
-    input_spec=Dcm2NiixInputSpec
-    output_spec=Dcm2NiixOutputSpec
-    executable="dcm2niix"
+    input_spec = Dcm2NiixInputSpec
+    output_spec = Dcm2NiixOutputSpec
+    executable = "dcm2niix"
