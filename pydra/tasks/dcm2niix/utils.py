@@ -1,4 +1,3 @@
-import attr
 import typing as ty
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
@@ -321,8 +320,9 @@ class Dcm2Niix(ShellCommandTask):
     >>> task = Dcm2Niix()
     >>> task.inputs.in_dir = "test-data/test_dicoms"
     >>> task.inputs.out_dir = "test-data/output"
+    >>> task.inputs.compress = "y"
     >>> task.cmdline
-    'dcm2niix -o test-data/output -f out_file test-data/test_dicoms'
+    'dcm2niix -o test-data/output -f out_file -z y test-data/test_dicoms'
     """
 
     input_spec = Dcm2NiixInputSpec
