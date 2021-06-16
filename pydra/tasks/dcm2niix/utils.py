@@ -33,7 +33,7 @@ input_fields = [
     (
         "compression_level",
         int,
-        6,
+        # 6,
         {
             "argstr": "-{compression_level}",
             "allowed_values": tuple(range(1, 10)),
@@ -43,13 +43,13 @@ input_fields = [
     (
         "adjacent",
         str,
-        "n",
+        # "n",
         {"argstr": "-a {adjacent}", "help_string": "adjacent DICOMs "},
     ),
     (
         "bids",
         str,
-        "y",
+        # "y",
         {
             "argstr": "-b {bids}",
             "allowed_values": ("y", "n", "o"),
@@ -59,7 +59,7 @@ input_fields = [
     (
         "anonymize_bids",
         str,
-        "y",
+        # "y",
         {
             "argstr": "-ba {anonymize_bids}",
             "allowed_values": ("y", "n"),
@@ -74,7 +74,7 @@ input_fields = [
     (
         "search_depth",
         int,
-        5,
+        # 5,
         {
             "argstr": "-d {search_depth}",
             "help_string": (
@@ -87,7 +87,7 @@ input_fields = [
     (
         "export_nrrd",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-e {export_nrrd}",
             "allowed_values": ("y", "n"),
@@ -97,7 +97,7 @@ input_fields = [
     (
         "generate_defaults",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-g {generate_defaults}",
             "allowed_values": ("y", "n", "o", "i"),
@@ -110,7 +110,7 @@ input_fields = [
     (
         "ignore_derived",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-i {ignore_derived}",
             "allowed_values": ("y", "n"),
@@ -120,7 +120,7 @@ input_fields = [
     (
         "losslessly_scale",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-l {losslessly_scale}",
             "allowed_values": ("y", "n", "o"),
@@ -133,7 +133,7 @@ input_fields = [
     (
         "merge_2d",
         int,
-        2,
+        # 2,
         {
             "argstr": "-m {merge_2d}",
             "allowed_values": ("y", "n", "0", "1", "2"),
@@ -156,7 +156,7 @@ input_fields = [
     (
         "philips_scaling",
         str,
-        "y",
+        # "y",
         {
             "argstr": "-p {philips_scaling}",
             "help_string": "Philips precise float (not display) scaling",
@@ -165,7 +165,7 @@ input_fields = [
     (
         "rename_instead",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-r {rename_instead}",
             "allowed_values": ("y", "n"),
@@ -175,7 +175,7 @@ input_fields = [
     (
         "single_file_mode",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-s {single_file_mode}",
             "allowed_values": ("y", "n"),
@@ -187,7 +187,7 @@ input_fields = [
     (
         "private_text_notes",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-t {private_text_notes}",
             "allowed_values": ("y", "n"),
@@ -198,7 +198,7 @@ input_fields = [
     (
         "verbose",
         str,
-        "0",
+        # "0",
         {
             "argstr": "-v {verbose}",
             "allowed_values": ("y", "n", "0", "1", "2"),
@@ -208,7 +208,7 @@ input_fields = [
     (
         "name_conflicts",
         int,
-        2,
+        # 2,
         {
             "argstr": "-w {name_conflicts}",
             "allowed_values": tuple(range(3)),
@@ -221,7 +221,7 @@ input_fields = [
     (
         "crop_3d",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-x {crop_3d}",
             "allowed_values": ("y", "n", "i"),
@@ -234,7 +234,7 @@ input_fields = [
     (
         "compress",
         str,
-        "n",
+        # "n",
         {
             "argstr": "-z {compress}",
             "allowed_values": ("y", "o", "i", "n", "3"),
@@ -247,7 +247,7 @@ input_fields = [
     (
         "big_endian",
         str,
-        "o",
+        # "o",
         {
             "argstr": "--big-endian {big_endian}",
             "allowed_values": ("y", "n", "o"),
@@ -257,7 +257,7 @@ input_fields = [
     (
         "progress",
         str,
-        "n",
+        # "n",
         {
             "argstr": "--progress {progress}",
             "allowed_values": ("y", "n"),
@@ -319,10 +319,10 @@ class Dcm2Niix(ShellCommandTask):
     Example
     -------
     >>> task = Dcm2Niix()
-    >>> task.inputs.in_dir = "tests/test_dicoms"
-    >>> task.inputs.out_dir = "tests/output"
+    >>> task.inputs.in_dir = "tests/data/test_dicoms"
+    >>> task.inputs.out_dir = "tests/data/output"
     >>> task.cmdline
-    'dcm2niix -f out_file -o tests/output tests/test_dicoms'
+    'dcm2niix -o tests/data/output -f out_file tests/data/test_dicoms'
     """
 
     input_spec = Dcm2NiixInputSpec
