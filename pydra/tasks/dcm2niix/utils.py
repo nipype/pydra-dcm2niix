@@ -319,10 +319,8 @@ class Dcm2Niix(ShellCommandTask):
     Example
     -------
     >>> task = Dcm2Niix()
-    >>> task.inputs.in_dir = "tests/data/test_dicoms"
-    >>> task.inputs.out_dir = "tests/data/output"
-    >>> import os
-    >>> print(os.getcwd())
+    >>> task.inputs.in_dir = "test-data/test_dicoms"
+    >>> task.inputs.out_dir = "test-data/output"
     >>> task.cmdline
     'dcm2niix -o tests/data/output -f out_file tests/data/test_dicoms'
     """
