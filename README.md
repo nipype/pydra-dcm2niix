@@ -34,10 +34,10 @@ However, the converter task interface will typically be used as the first step w
 from pydra import Workflow
 from pydra.tasks.dcm2niix import Dcm2Niix
 
-my_workflow = Workflow(name='my_workflow')
+my_workflow = Workflow(name='my_workflow', input_spec=['in_dicom'])
 
 my_workflow.add(
-    Dcm2Niix(name='converter', in_dir='/path/to/dicom/dir', out_dir='.'))
+    Dcm2Niix(name='converter', in_dir=my_workflow.lzin.in_dicom, out_dir='.'))
 my_workflow.add(...)
 
 my_workflow()
