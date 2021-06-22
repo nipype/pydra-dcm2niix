@@ -37,7 +37,7 @@ from pydra.tasks.dcm2niix import Dcm2Niix
 my_workflow = Workflow(name='my_workflow')
 
 my_workflow.add(
-    Dcm2Niix(name='converter', in_dir='/path/to/dicom/dir', out_dir='/path/to/create/nifti/output'))
+    Dcm2Niix(name='converter', in_dir='/path/to/dicom/dir', out_dir='.'))
 my_workflow.add(...)
 
 my_workflow()
