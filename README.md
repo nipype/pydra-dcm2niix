@@ -16,3 +16,29 @@ pip install /path/to/pydra-dcm2niix/
 ```
 pip install -e /path/to/pydra-dcm2niix/[dev]
 ```
+
+## Basic Use
+
+To run the `dcm2niix` task
+
+```
+from pydra.tasks.dcm2niix import Dcm2Niix
+
+task = Dcm2Niix(in_dir='/path/to/dicom/dir', out_dir='/path/to/create/nifti/output')
+result = task()
+```
+
+However, the converter task interface will typically be used as the first step within larger Pydra workflows
+
+```
+from pydra import Workflow
+from pydra.tasks.dcm2niix import Dcm2Niix
+
+my_workflow = Workflow(name='my_workflow')
+
+my_workflow.add(
+    Dcm2Niix(name='converter', in_dir='/path/to/dicom/dir', out_dir='/path/to/create/nifti/output'))
+my_workflow.add(...)
+
+my_workflow()
+```
