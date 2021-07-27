@@ -30,6 +30,19 @@ input_fields = [
         {"argstr": "-f {filename}", "help_string": "The output name for the file"},
     ),
     (
+        "compress",
+        str,
+        # "n",
+        {
+            "argstr": "-z {compress}",
+            "allowed_values": ("y", "o", "i", "n", "3"),
+            "help_string": (
+                "gz compress images  [y=pigz, o=optimal pigz, "
+                "i=internal:miniz, n=no, 3=no,3D]"
+            ),
+        },
+    ),
+    (
         "compression_level",
         int,
         # 6,
@@ -231,19 +244,6 @@ input_fields = [
         },
     ),
     (
-        "compress",
-        str,
-        # "n",
-        {
-            "argstr": "-z {compress}",
-            "allowed_values": ("y", "o", "i", "n", "3"),
-            "help_string": (
-                "gz compress images  [y=pigz, o=optimal pigz, "
-                "i=internal:miniz, n=no, 3=no,3D]"
-            ),
-        },
-    ),
-    (
         "big_endian",
         str,
         # "o",
@@ -309,7 +309,7 @@ output_fields = [
 ]
 
 Dcm2NiixOutputSpec = SpecInfo(
-    name="Dcm2niixInputs", fields=output_fields, bases=(ShellOutSpec,)
+    name="Dcm2niixOutputs", fields=output_fields, bases=(ShellOutSpec,)
 )
 
 
