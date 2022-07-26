@@ -8,7 +8,7 @@ input_fields = [
         "in_dir",
         Directory,
         {
-            "argstr": "{in_dir}",
+            "argstr": "'{in_dir}'",
             "position": -1,
             "help_string": ("The directory containing the DICOMs to be converted"),
             "mandatory": True,
@@ -18,7 +18,7 @@ input_fields = [
         "out_dir",
         str,
         {
-            "argstr": "-o {out_dir}",
+            "argstr": "-o '{out_dir}'",
             "help_string": "output directory",
             "mandatory": True,
         },
@@ -27,7 +27,7 @@ input_fields = [
         "filename",
         str,
         "out_file",
-        {"argstr": "-f {filename}", "help_string": "The output name for the file"},
+        {"argstr": "-f '{filename}'", "help_string": "The output name for the file"},
     ),
     (
         "compress",
@@ -322,7 +322,7 @@ class Dcm2Niix(ShellCommandTask):
     >>> task.inputs.out_dir = "test-data/output"
     >>> task.inputs.compress = "y"
     >>> task.cmdline
-    'dcm2niix -o test-data/output -f out_file -z y test-data/test_dicoms'
+    "dcm2niix -o 'test-data/output' -f 'out_file' -z y 'test-data/test_dicoms'"
     """
 
     input_spec = Dcm2NiixInputSpec
