@@ -1,6 +1,32 @@
-import typing as ty
+import os.path
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
+
+
+def dcm2niix_out_file(out_dir, filename, echo, compress):
+    # Append echo number of NIfTI echo to select is provided
+    if echo:
+        echo_suffix = f"_e{echo}"
+    else:
+        echo_suffix = ""
+
+    out_file = f"{out_dir}/{filename}{echo_suffix}.nii"
+
+    # If compressed, append the zip extension
+    if compress in ("y", "o", "i"):
+        out_file += ".gz"
+
+    return os.path.abspath(out_file)
+
+
+def dcm2niix_out_json(out_dir, filename, echo):
+    # Append echo number of NIfTI echo to select is provided
+    if echo:
+        echo_suffix = f"_e{echo}"
+    else:
+        echo_suffix = ""
+
+    return os.path.abspath(f"{out_dir}/{filename}{echo_suffix}.json")
 
 
 input_fields = [
@@ -16,7 +42,7 @@ input_fields = [
     ),
     (
         "out_dir",
-        str,
+        Directory,
         {
             "argstr": "-o '{out_dir}'",
             "help_string": "output directory",
@@ -28,6 +54,18 @@ input_fields = [
         str,
         "out_file",
         {"argstr": "-f '{filename}'", "help_string": "The output name for the file"},
+    ),
+    (
+        "echo",
+        int,
+        {
+            "argstr": "",
+            "help_string": (
+                "The echo number to extract from the DICOM dataset. When multiple "
+                "echoes are discovered in the dataset then dcm2niix will create "
+                "separate files for each echo with the suffix '_e<echo-number>.nii'"
+            ),
+        },
     ),
     (
         "compress",
@@ -279,7 +317,8 @@ output_fields = [
         File,
         {
             "help_string": "output NIfTI image",
-            "output_file_template": "{out_dir}/{filename}.nii.gz",
+            "callable": dcm2niix_out_file,
+            "mandatory": True,
         },
     ),
     (
@@ -287,7 +326,8 @@ output_fields = [
         File,
         {
             "help_string": "output BIDS side-car JSON",
-            "output_file_template": "{out_dir}/{filename}.json",
+            # "requires": [("bids", 'y')],  FIXME: should be either 'y' or 'o'
+            "callable": dcm2niix_out_json,
         },
     ),
     (
@@ -319,10 +359,10 @@ class Dcm2Niix(ShellCommandTask):
     -------
     >>> task = Dcm2Niix()
     >>> task.inputs.in_dir = "test-data/test_dicoms"
-    >>> task.inputs.out_dir = "test-data/output"
+    >>> task.inputs.out_dir = "test-data"
     >>> task.inputs.compress = "y"
     >>> task.cmdline
-    "dcm2niix -o 'test-data/output' -f 'out_file' -z y 'test-data/test_dicoms'"
+    'dcm2niix -o test-data -f out_file -z y test-data/test_dicoms'
     """
 
     input_spec = Dcm2NiixInputSpec
