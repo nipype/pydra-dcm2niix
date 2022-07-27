@@ -7,6 +7,5 @@ def test_dcm2niix():
     task.inputs.out_dir = "test-data"
     task.inputs.compress = "y"
     assert (
-        task.cmdline
-        == "dcm2niix -o 'test-data' -f 'out_file' -z y 'test-data/test_dicoms'"
+        task.cmdline == "dcm2niix -o test-data -f out_file -z y test-data/test_dicoms"
     )

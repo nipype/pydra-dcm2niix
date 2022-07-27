@@ -362,7 +362,7 @@ class Dcm2Niix(ShellCommandTask):
     >>> task.inputs.out_dir = "test-data"
     >>> task.inputs.compress = "y"
     >>> task.cmdline
-    "dcm2niix -o 'test-data' -f 'out_file' -z y 'test-data/test_dicoms'"
+    "dcm2niix -o test-data -f out_file -z y test-data/test_dicoms"
     """
 
     input_spec = Dcm2NiixInputSpec
