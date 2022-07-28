@@ -3,14 +3,16 @@ from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
 
-def dcm2niix_out_file(out_dir, filename, echo, compress):
+def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
     # Append echo number of NIfTI echo to select is provided
-    if echo:
-        echo_suffix = f"_e{echo}"
+    if suffix:
+        file_suffix = "_" + suffix
+    elif echo:
+        file_suffix = f"_e{echo}"
     else:
-        echo_suffix = ""
+        file_suffix = ""
 
-    out_file = f"{out_dir}/{filename}{echo_suffix}.nii"
+    out_file = f"{out_dir}/{filename}{file_suffix}.nii"
 
     # If compressed, append the zip extension
     if compress in ("y", "o", "i"):
@@ -20,16 +22,17 @@ def dcm2niix_out_file(out_dir, filename, echo, compress):
 
     # Check to see if multiple echos exist in the DICOM dataset
     if not out_file.exists():
-        if echos := [
+        if echoes := [
             str(p)
             for p in out_file.parent.iterdir()
-            if p.stem.startswith(out_file.stem + "_e")
+            if p.stem.startswith(filename + "_e")
         ]:
             raise ValueError(
                 "DICOM dataset contains multiple echos, please specify which "
                 "echo you want via the 'echo' input:\n"
-                "\n".join(echos)
+                "\n".join(echoes)
             )
+
     return out_file
 
 
@@ -79,6 +82,22 @@ input_fields = [
                 "echoes are discovered in the dataset then dcm2niix will create "
                 "separate files for each echo with the suffix '_e<echo-number>.nii'"
             ),
+            "xor": ["suffix"],
+        },
+    ),
+    (
+        "suffix",
+        str,
+        {
+            "argstr": "",
+            "help_string": (
+                "A suffix to append to the out_file, used to select which "
+                "of the disambiguated outputs to return (see https://github.com/"
+                "rordenlab/dcm2niix/blob/master/FILENAMING.md"
+                "#file-name-post-fixes-image-disambiguation) "
+            ),
+            "xor": ["echo"],
+            "allowed_values": ["Eq", "ph", "imaginary", "MoCo", "real", "phMag"],
         },
     ),
     (
