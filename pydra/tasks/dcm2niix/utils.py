@@ -22,11 +22,12 @@ def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
 
     # Check to see if multiple echos exist in the DICOM dataset
     if not out_file.exists():
-        if echoes := [
+        echoes = [
             str(p)
             for p in out_file.parent.iterdir()
             if p.stem.startswith(filename + "_e")
-        ]:
+        ]
+        if echoes:
             raise ValueError(
                 "DICOM dataset contains multiple echos, please specify which "
                 "echo you want via the 'echo' input:\n"
