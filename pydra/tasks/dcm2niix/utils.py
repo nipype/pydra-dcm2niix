@@ -1,4 +1,4 @@
-import os.path
+from pathlib import Path
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
@@ -16,7 +16,21 @@ def dcm2niix_out_file(out_dir, filename, echo, compress):
     if compress in ("y", "o", "i"):
         out_file += ".gz"
 
-    return os.path.abspath(out_file)
+    out_file = Path(out_file).absolute()
+
+    # Check to see if multiple echos exist in the DICOM dataset
+    if not out_file.exists():
+        if echos := [
+            str(p)
+            for p in out_file.parent.iterdir()
+            if p.stem.startswith(out_file.stem + "_e")
+        ]:
+            raise ValueError(
+                "DICOM dataset contains multiple echos, please specify which "
+                "echo you want via the 'echo' input:\n"
+                "\n".join(echos)
+            )
+    return out_file
 
 
 def dcm2niix_out_json(out_dir, filename, echo):
@@ -26,7 +40,7 @@ def dcm2niix_out_json(out_dir, filename, echo):
     else:
         echo_suffix = ""
 
-    return os.path.abspath(f"{out_dir}/{filename}{echo_suffix}.json")
+    return Path(f"{out_dir}/{filename}{echo_suffix}.json").absolute()
 
 
 input_fields = [
