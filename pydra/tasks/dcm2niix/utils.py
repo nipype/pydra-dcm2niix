@@ -1,4 +1,5 @@
 import attrs
+import typing as ty
 from pathlib import Path
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
@@ -9,19 +10,26 @@ def out_file_path(out_dir, filename, suffix, ext):
     created by Dcm2niix (see https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md)
     """
 
-    fpath = Path(f"{out_dir}/{filename}{suffix}{ext}").absolute()
+    fpath = Path(out_dir) / filename
+    fpath = fpath.with_suffix((suffix if suffix else "") + ext).absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
     if not fpath.exists():
-        neighbours = [str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)]
-        raise ValueError(
-            f"\nDid not find expected file '{fpath}' (suffix={suffix}) "
-            "after DICOM -> NIfTI conversion, please see "
-            "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
-            "list of suffixes that dcm2niix produces and provide an appropriate "
-            "suffix. Found the following files with matching extensions:\n"
-            + "\n".join(neighbours)
-        )
+        if suffix is not None:  # NB: doesn't match attrs.NOTHING
+            neighbours = [
+                str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)
+            ]
+            raise ValueError(
+                f"\nDid not find expected file '{fpath}' (suffix={suffix}) "
+                "after DICOM -> NIfTI conversion, please see "
+                "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
+                "list of suffixes that dcm2niix produces and provide an appropriate "
+                "suffix, or set suffix to None to ignore matching a single file and use "
+                "the list returned in 'out_files' instead. Found the following files "
+                "with matching extensions:\n" + "\n".join(neighbours)
+            )
+        else:
+            fpath = attrs.NOTHING  # Did not find output path and
 
     return fpath
 
@@ -43,6 +51,14 @@ def dcm2niix_out_json(out_dir, filename, suffix, bids):
     else:
         fpath = attrs.NOTHING
     return fpath
+
+
+def dcm2niix_out_files(out_dir, filename):
+    return [
+        str(p.absolute())
+        for p in Path(out_dir).iterdir()
+        if p.name.startswith(filename)
+    ]
 
 
 input_fields = [
@@ -75,12 +91,15 @@ input_fields = [
         "suffix",
         str,
         {
-            "argstr": "",
             "help_string": (
-                "A suffix to append to the out_file, used to select which "
-                "of the disambiguated outputs to return (see https://github.com/"
+                "The suffix appended to the output filename, used to select which "
+                "of the disambiguated nifti files created by dcm2niix to return "
+                "in this field (see https://github.com/"
                 "rordenlab/dcm2niix/blob/master/FILENAMING.md"
-                "#file-name-post-fixes-image-disambiguation) "
+                "#file-name-post-fixes-image-disambiguation). Set to None to skip "
+                "matching a single file (out_file will be set to attrs.NOTHING if the "
+                "base filepath without suffixes doesn't exist) and handle the list of "
+                "output files returned in 'out_files' instead."
             ),
             "xor": ["echo"],
             "allowed_values": ["Eq", "ph", "imaginary", "MoCo", "real", "phMag"],
@@ -335,7 +354,10 @@ output_fields = [
         "out_file",
         File,
         {
-            "help_string": "output NIfTI image",
+            "help_string": (
+                "output NIfTI image. If multiple nifti files are created and 'suffix' "
+                "is provided then ",
+            ),
             "callable": dcm2niix_out_file,
             "mandatory": True,
         },
@@ -344,7 +366,7 @@ output_fields = [
         "out_json",
         File,
         {
-            "help_string": "output BIDS side-car JSON",
+            "help_string": "output BIDS side-car JSON corresponding to 'out_file'",
             # "requires": [("bids", 'y')],  FIXME: should be either 'y' or 'o'
             "callable": dcm2niix_out_json,
         },
@@ -363,6 +385,18 @@ output_fields = [
         {
             "help_string": "output dMRI b-bectors in FSL format",
             "output_file_template": "{out_dir}/{filename}.bvec",
+        },
+    ),
+    (
+        "out_files",
+        ty.List[File],
+        {
+            "help_string": (
+                "all output files in a list, including files disambiguated "
+                "by their suffixes (e.g. echoes, phase-maps, etc... see "
+                "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md"
+            ),
+            "callable": dcm2niix_out_files,
         },
     ),
 ]
