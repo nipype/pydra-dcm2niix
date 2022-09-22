@@ -4,43 +4,42 @@ from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
 
-def out_file_path(out_dir, filename, echo, suffix, ext):
-    # Append echo number of NIfTI echo to select is provided
-    if suffix:
-        file_suffix = "_" + suffix
-    elif echo:
-        file_suffix = f"_e{echo}"
-    else:
-        file_suffix = ""
+def out_file_path(out_dir, filename, suffix, ext):
+    """Attempting to handle the different suffixes that are appended to filenames
+    created by Dcm2niix (see https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md)
+    """
 
-    fpath = Path(f"{out_dir}/{filename}{file_suffix}{ext}").absolute()
+    fpath = Path(f"{out_dir}/{filename}{suffix}{ext}").absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
     if not fpath.exists():
         neighbours = [str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)]
         raise ValueError(
-            f"\nDid not find expected file '{fpath}' after DICOM -> NIfTI "
-            "conversion, instead found (check provided echo and suffix):\n"
+            f"\nDid not find expected file '{fpath}' (suffix={suffix}) "
+            "after DICOM -> NIfTI conversion, please see "
+            "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
+            "list of suffixes that dcm2niix produces and provide an appropriate "
+            "suffix. Found the following files with matching extensions:\n"
             + "\n".join(neighbours)
         )
 
     return fpath
 
 
-def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
+def dcm2niix_out_file(out_dir, filename, suffix, compress):
 
     ext = ".nii"
     # If compressed, append the zip extension
     if compress in ("y", "o", "i"):
         ext += ".gz"
 
-    return out_file_path(out_dir, filename, echo, suffix, ext)
+    return out_file_path(out_dir, filename, suffix, ext)
 
 
-def dcm2niix_out_json(out_dir, filename, echo, suffix, bids):
+def dcm2niix_out_json(out_dir, filename, suffix, bids):
     # Append echo number of NIfTI echo to select is provided
     if bids in ("y", "o"):
-        fpath = out_file_path(out_dir, filename, echo, suffix, ".json")
+        fpath = out_file_path(out_dir, filename, suffix, ".json")
     else:
         fpath = attrs.NOTHING
     return fpath
@@ -71,19 +70,6 @@ input_fields = [
         str,
         "out_file",
         {"argstr": "-f '{filename}'", "help_string": "The output name for the file"},
-    ),
-    (
-        "echo",
-        int,
-        {
-            "argstr": "",
-            "help_string": (
-                "The echo number to extract from the DICOM dataset. When multiple "
-                "echoes are discovered in the dataset then dcm2niix will create "
-                "separate files for each echo with the suffix '_e<echo-number>.nii'"
-            ),
-            "xor": ["suffix"],
-        },
     ),
     (
         "suffix",
