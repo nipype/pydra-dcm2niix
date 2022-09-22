@@ -5,26 +5,26 @@ from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
 
-def out_file_path(out_dir, filename, file_suffix, ext):
+def out_file_path(out_dir, filename, file_postfix, ext):
     """Attempting to handle the different suffixes that are appended to filenames
     created by Dcm2niix (see https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md)
     """
 
-    fpath = Path(out_dir) / filename
-    fpath = fpath.with_suffix((file_suffix if file_suffix else "") + ext).absolute()
+    fpath = Path(out_dir) / (filename + (file_postfix if file_postfix else "") + ext)
+    fpath = fpath.absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
     if not fpath.exists():
-        if file_suffix is not None:  # NB: doesn't match attrs.NOTHING
+        if file_postfix is not None:  # NB: doesn't match attrs.NOTHING
             neighbours = [
                 str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)
             ]
             raise ValueError(
-                f"\nDid not find expected file '{fpath}' (file_suffix={file_suffix}) "
+                f"\nDid not find expected file '{fpath}' (file_postfix={file_postfix}) "
                 "after DICOM -> NIfTI conversion, please see "
                 "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
-                "list of suffixes that dcm2niix produces and provide an appropriate "
-                "suffix, or set suffix to None to ignore matching a single file and use "
+                "list of postfixes that dcm2niix produces and provide an appropriate "
+                "postfix, or set postfix to None to ignore matching a single file and use "
                 "the list returned in 'out_files' instead. Found the following files "
                 "with matching extensions:\n" + "\n".join(neighbours)
             )
@@ -34,20 +34,20 @@ def out_file_path(out_dir, filename, file_suffix, ext):
     return fpath
 
 
-def dcm2niix_out_file(out_dir, filename, suffix, compress):
+def dcm2niix_out_file(out_dir, filename, file_postfix, compress):
 
     ext = ".nii"
     # If compressed, append the zip extension
     if compress in ("y", "o", "i"):
         ext += ".gz"
 
-    return out_file_path(out_dir, filename, suffix, ext)
+    return out_file_path(out_dir, filename, file_postfix, ext)
 
 
-def dcm2niix_out_json(out_dir, filename, suffix, bids):
+def dcm2niix_out_json(out_dir, filename, file_postfix, bids):
     # Append echo number of NIfTI echo to select is provided
-    if bids in ("y", "o"):
-        fpath = out_file_path(out_dir, filename, suffix, ".json")
+    if bids is attrs.NOTHING or bids in ("y", "o"):
+        fpath = out_file_path(out_dir, filename, file_postfix, ".json")
     else:
         fpath = attrs.NOTHING
     return fpath
@@ -88,21 +88,19 @@ input_fields = [
         {"argstr": "-f '{filename}'", "help_string": "The output name for the file"},
     ),
     (
-        "file_suffix",
+        "file_postfix",
         str,
         {
             "help_string": (
-                "The suffix appended to the output filename, used to select which "
+                "The postfix appended to the output filename. Used to select which "
                 "of the disambiguated nifti files created by dcm2niix to return "
                 "in this field (see https://github.com/"
                 "rordenlab/dcm2niix/blob/master/FILENAMING.md"
                 "#file-name-post-fixes-image-disambiguation). Set to None to skip "
                 "matching a single file (out_file will be set to attrs.NOTHING if the "
-                "base filepath without suffixes doesn't exist) and handle the list of "
+                "base path without postfixes doesn't exist) and handle the list of "
                 "output files returned in 'out_files' instead."
             ),
-            "xor": ["echo"],
-            "allowed_values": ["Eq", "ph", "imaginary", "MoCo", "real", "phMag"],
         },
     ),
     (
@@ -355,8 +353,11 @@ output_fields = [
         File,
         {
             "help_string": (
-                "output NIfTI image. If multiple nifti files are created and 'suffix' "
-                "is provided then ",
+                "output NIfTI image. If multiple nifti files are created (e.g. for "
+                "different echoes), then the 'file_postfix' input can be provided to "
+                "select which of them is considered the 'out_file'. Otherwise it "
+                "should be set to None and 'out_files' used instead (in which case "
+                "'out_file' will be set to attrs.NOTHING)",
             ),
             "callable": dcm2niix_out_file,
             "mandatory": True,
@@ -389,7 +390,7 @@ output_fields = [
     ),
     (
         "out_files",
-        ty.List[File],
+        list,
         {
             "help_string": (
                 "all output files in a list, including files disambiguated "
