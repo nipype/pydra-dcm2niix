@@ -1,9 +1,10 @@
+import attrs
 from pathlib import Path
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
 
-def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
+def out_file_path(out_dir, filename, echo, suffix, ext):
     # Append echo number of NIfTI echo to select is provided
     if suffix:
         file_suffix = "_" + suffix
@@ -12,39 +13,37 @@ def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
     else:
         file_suffix = ""
 
-    out_file = f"{out_dir}/{filename}{file_suffix}.nii"
-
-    # If compressed, append the zip extension
-    if compress in ("y", "o", "i"):
-        out_file += ".gz"
-
-    out_file = Path(out_file).absolute()
+    fpath = Path(f"{out_dir}/{filename}{file_suffix}{ext}").absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
-    if not out_file.exists():
-        echoes = [
-            str(p)
-            for p in out_file.parent.iterdir()
-            if p.stem.startswith(filename + "_e")
-        ]
-        if echoes:
-            raise ValueError(
-                "DICOM dataset contains multiple echos, please specify which "
-                "echo you want via the 'echo' input:\n"
-                "\n".join(echoes)
-            )
+    if not fpath.exists():
+        neighbours = [str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)]
+        raise ValueError(
+            f"\nDid not find expected file '{fpath}' after DICOM -> NIfTI "
+            "conversion, instead found (check provided echo and suffix):\n"
+            + "\n".join(neighbours)
+        )
 
-    return out_file
+    return fpath
 
 
-def dcm2niix_out_json(out_dir, filename, echo):
+def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
+
+    ext = ".nii"
+    # If compressed, append the zip extension
+    if compress in ("y", "o", "i"):
+        ext += ".gz"
+
+    return out_file_path(out_dir, filename, echo, suffix, ext)
+
+
+def dcm2niix_out_json(out_dir, filename, echo, suffix, bids):
     # Append echo number of NIfTI echo to select is provided
-    if echo:
-        echo_suffix = f"_e{echo}"
+    if bids in ("y", "o"):
+        fpath = out_file_path(out_dir, filename, echo, suffix, ".json")
     else:
-        echo_suffix = ""
-
-    return Path(f"{out_dir}/{filename}{echo_suffix}.json").absolute()
+        fpath = attrs.NOTHING
+    return fpath
 
 
 input_fields = [
