@@ -5,22 +5,22 @@ from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
 
-def out_file_path(out_dir, filename, suffix, ext):
+def out_file_path(out_dir, filename, file_suffix, ext):
     """Attempting to handle the different suffixes that are appended to filenames
     created by Dcm2niix (see https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md)
     """
 
     fpath = Path(out_dir) / filename
-    fpath = fpath.with_suffix((suffix if suffix else "") + ext).absolute()
+    fpath = fpath.with_suffix((file_suffix if file_suffix else "") + ext).absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
     if not fpath.exists():
-        if suffix is not None:  # NB: doesn't match attrs.NOTHING
+        if file_suffix is not None:  # NB: doesn't match attrs.NOTHING
             neighbours = [
                 str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)
             ]
             raise ValueError(
-                f"\nDid not find expected file '{fpath}' (suffix={suffix}) "
+                f"\nDid not find expected file '{fpath}' (file_suffix={file_suffix}) "
                 "after DICOM -> NIfTI conversion, please see "
                 "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
                 "list of suffixes that dcm2niix produces and provide an appropriate "
@@ -88,7 +88,7 @@ input_fields = [
         {"argstr": "-f '{filename}'", "help_string": "The output name for the file"},
     ),
     (
-        "suffix",
+        "file_suffix",
         str,
         {
             "help_string": (
