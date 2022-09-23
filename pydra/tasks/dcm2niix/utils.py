@@ -1,5 +1,4 @@
 import attrs
-import typing as ty
 from pathlib import Path
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
