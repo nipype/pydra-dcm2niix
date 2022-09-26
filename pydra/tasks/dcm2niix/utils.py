@@ -1,50 +1,63 @@
+import attrs
 from pathlib import Path
 from pydra import ShellCommandTask
 from pydra.engine.specs import ShellSpec, ShellOutSpec, File, Directory, SpecInfo
 
 
-def dcm2niix_out_file(out_dir, filename, echo, suffix, compress):
-    # Append echo number of NIfTI echo to select is provided
-    if suffix:
-        file_suffix = "_" + suffix
-    elif echo:
-        file_suffix = f"_e{echo}"
-    else:
-        file_suffix = ""
+def out_file_path(out_dir, filename, file_postfix, ext):
+    """Attempting to handle the different suffixes that are appended to filenames
+    created by Dcm2niix (see https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md)
+    """
 
-    out_file = f"{out_dir}/{filename}{file_suffix}.nii"
-
-    # If compressed, append the zip extension
-    if compress in ("y", "o", "i"):
-        out_file += ".gz"
-
-    out_file = Path(out_file).absolute()
+    fpath = Path(out_dir) / (filename + (file_postfix if file_postfix else "") + ext)
+    fpath = fpath.absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
-    if not out_file.exists():
-        echoes = [
-            str(p)
-            for p in out_file.parent.iterdir()
-            if p.stem.startswith(filename + "_e")
-        ]
-        if echoes:
+    if not fpath.exists():
+        if file_postfix is not None:  # NB: doesn't match attrs.NOTHING
+            neighbours = [
+                str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)
+            ]
             raise ValueError(
-                "DICOM dataset contains multiple echos, please specify which "
-                "echo you want via the 'echo' input:\n"
-                "\n".join(echoes)
+                f"\nDid not find expected file '{fpath}' (file_postfix={file_postfix}) "
+                "after DICOM -> NIfTI conversion, please see "
+                "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
+                "list of postfixes that dcm2niix produces and provide an appropriate "
+                "postfix, or set postfix to None to ignore matching a single file and use "
+                "the list returned in 'out_files' instead. Found the following files "
+                "with matching extensions:\n" + "\n".join(neighbours)
             )
+        else:
+            fpath = attrs.NOTHING  # Did not find output path and
 
-    return out_file
+    return fpath
 
 
-def dcm2niix_out_json(out_dir, filename, echo):
+def dcm2niix_out_file(out_dir, filename, file_postfix, compress):
+
+    ext = ".nii"
+    # If compressed, append the zip extension
+    if compress in ("y", "o", "i"):
+        ext += ".gz"
+
+    return out_file_path(out_dir, filename, file_postfix, ext)
+
+
+def dcm2niix_out_json(out_dir, filename, file_postfix, bids):
     # Append echo number of NIfTI echo to select is provided
-    if echo:
-        echo_suffix = f"_e{echo}"
+    if bids is attrs.NOTHING or bids in ("y", "o"):
+        fpath = out_file_path(out_dir, filename, file_postfix, ".json")
     else:
-        echo_suffix = ""
+        fpath = attrs.NOTHING
+    return fpath
 
-    return Path(f"{out_dir}/{filename}{echo_suffix}.json").absolute()
+
+def dcm2niix_out_files(out_dir, filename):
+    return [
+        str(p.absolute())
+        for p in Path(out_dir).iterdir()
+        if p.name.startswith(filename)
+    ]
 
 
 input_fields = [
@@ -74,31 +87,19 @@ input_fields = [
         {"argstr": "-f '{filename}'", "help_string": "The output name for the file"},
     ),
     (
-        "echo",
-        int,
-        {
-            "argstr": "",
-            "help_string": (
-                "The echo number to extract from the DICOM dataset. When multiple "
-                "echoes are discovered in the dataset then dcm2niix will create "
-                "separate files for each echo with the suffix '_e<echo-number>.nii'"
-            ),
-            "xor": ["suffix"],
-        },
-    ),
-    (
-        "suffix",
+        "file_postfix",
         str,
         {
-            "argstr": "",
             "help_string": (
-                "A suffix to append to the out_file, used to select which "
-                "of the disambiguated outputs to return (see https://github.com/"
+                "The postfix appended to the output filename. Used to select which "
+                "of the disambiguated nifti files created by dcm2niix to return "
+                "in this field (see https://github.com/"
                 "rordenlab/dcm2niix/blob/master/FILENAMING.md"
-                "#file-name-post-fixes-image-disambiguation) "
+                "#file-name-post-fixes-image-disambiguation). Set to None to skip "
+                "matching a single file (out_file will be set to attrs.NOTHING if the "
+                "base path without postfixes doesn't exist) and handle the list of "
+                "output files returned in 'out_files' instead."
             ),
-            "xor": ["echo"],
-            "allowed_values": ["Eq", "ph", "imaginary", "MoCo", "real", "phMag"],
         },
     ),
     (
@@ -350,7 +351,13 @@ output_fields = [
         "out_file",
         File,
         {
-            "help_string": "output NIfTI image",
+            "help_string": (
+                "output NIfTI image. If multiple nifti files are created (e.g. for "
+                "different echoes), then the 'file_postfix' input can be provided to "
+                "select which of them is considered the 'out_file'. Otherwise it "
+                "should be set to None and 'out_files' used instead (in which case "
+                "'out_file' will be set to attrs.NOTHING)",
+            ),
             "callable": dcm2niix_out_file,
             "mandatory": True,
         },
@@ -359,7 +366,7 @@ output_fields = [
         "out_json",
         File,
         {
-            "help_string": "output BIDS side-car JSON",
+            "help_string": "output BIDS side-car JSON corresponding to 'out_file'",
             # "requires": [("bids", 'y')],  FIXME: should be either 'y' or 'o'
             "callable": dcm2niix_out_json,
         },
@@ -378,6 +385,18 @@ output_fields = [
         {
             "help_string": "output dMRI b-bectors in FSL format",
             "output_file_template": "{out_dir}/{filename}.bvec",
+        },
+    ),
+    (
+        "out_files",
+        list,
+        {
+            "help_string": (
+                "all output files in a list, including files disambiguated "
+                "by their suffixes (e.g. echoes, phase-maps, etc... see "
+                "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md"
+            ),
+            "callable": dcm2niix_out_files,
         },
     ),
 ]
