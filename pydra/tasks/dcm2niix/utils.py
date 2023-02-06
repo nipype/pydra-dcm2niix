@@ -34,7 +34,6 @@ def out_file_path(out_dir, filename, file_postfix, ext):
 
 
 def dcm2niix_out_file(out_dir, filename, file_postfix, compress):
-
     ext = ".nii"
     # If compressed, append the zip extension
     if compress in ("y", "o", "i"):
