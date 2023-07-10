@@ -18,15 +18,18 @@ def out_file_path(out_dir, filename, file_postfix, ext):
             neighbours = [
                 str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)
             ]
-            raise ValueError(
-                f"\nDid not find expected file '{fpath}' (file_postfix={file_postfix}) "
-                "after DICOM -> NIfTI conversion, please see "
-                "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
-                "list of postfixes that dcm2niix produces and provide an appropriate "
-                "postfix, or set postfix to None to ignore matching a single file and use "
-                "the list returned in 'out_files' instead. Found the following files "
-                "with matching extensions:\n" + "\n".join(neighbours)
-            )
+            if len(neighbours) == 1 and file_postfix is attrs.NOTHING:
+                fpath = neighbours[0]
+            else:
+                raise ValueError(
+                    f"\nDid not find expected file '{fpath}' (file_postfix={file_postfix}) "
+                    "after DICOM -> NIfTI conversion, please see "
+                    "https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md for the "
+                    "list of postfixes that dcm2niix produces and provide an appropriate "
+                    "postfix, or set postfix to None to ignore matching a single file and use "
+                    "the list returned in 'out_files' instead. Found the following files "
+                    "with matching extensions:\n" + "\n".join(neighbours)
+                )
         else:
             fpath = attrs.NOTHING  # Did not find output path and
 
@@ -72,7 +75,7 @@ input_fields = [
     ),
     (
         "out_dir",
-        Directory,
+        Path,
         {
             "argstr": "-o '{out_dir}'",
             "help_string": "output directory",
