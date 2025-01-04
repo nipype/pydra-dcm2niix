@@ -136,3 +136,5 @@ dmypy.json
 .vscode
 
 upload-token.txt
+
+.DS_Store
