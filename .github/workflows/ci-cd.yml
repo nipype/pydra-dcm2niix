@@ -39,12 +39,13 @@ jobs:
         pip install ".[test]"
         python -c "import pydra.tasks.$SUBPACKAGE as m; print(f'{m.__name__} {m.__version__} @ {m.__file__}')"
         python -c "import pydra as m; print(f'{m.__name__} {m.__version__} @ {m.__file__}')"
-    - name: Install development Pydra
-      run: pip install --no-deps git+https://github.com/nipype/pydra.git@new-syntax
+    - name: Install development Pydra and fileformats-medimage
+      run: |
+        pip install --no-deps git+https://github.com/nipype/pydra.git@new-syntax
+        pip install --no-deps git+https://github.com/arcanaframework/fileformats-medimage.git@pydra-syntax-changes
     - name: Test with pytest
       run: |
-        pytest -sv --doctest-modules pydra/tasks/$SUBPACKAGE \
-            --cov pydra.tasks.$SUBPACKAGE --cov-report xml
+        pytest -sv --cov pydra.tasks.$SUBPACKAGE --cov-report xml
     - uses: codecov/codecov-action@v1
       if: ${{ always() }}
 

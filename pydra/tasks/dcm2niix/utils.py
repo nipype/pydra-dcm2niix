@@ -1,14 +1,12 @@
-import attrs
 from pathlib import Path
 import typing as ty
 from pydra.engine.specs import ShellDef, ShellOutputs
-from fileformats.generic import File, Directory, FileSet
 from fileformats.application import Json
-from fileformats.medimage import Nifti1, NiftiGz, Bvec, Bval
+from fileformats.medimage import DicomDir, Nifti1, NiftiGz, Bvec, Bval
 from pydra.design import shell
 
 
-FS = ty.TypeVar("FS", bound=FileSet)
+FS = ty.TypeVar("FS", bound=Nifti1 | NiftiGz | Json | Bval | Bvec)
 
 
 def get_out_file(
@@ -105,16 +103,16 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
     Example
     -------
     >>> task = Dcm2Niix()
-    >>> task.inputs.in_dir = "test-data/test_dicoms"
-    >>> task.inputs.out_dir = "test-data"
-    >>> task.inputs.compress = "y"
+    >>> task.in_dir = "test-data/test_dicoms"
+    >>> task.out_dir = "test-data"
+    >>> task.compress = "y"
     >>> task.cmdline
-    'dcm2niix -o test-data -f out_file -z y test-data/test_dicoms'
+    'dcm2niix -b y -z y -f out_file -o test-data test-data/test_dicoms'
     """
 
     executable = "dcm2niix"
 
-    in_dir: Directory = shell.arg(
+    in_dir: DicomDir = shell.arg(
         argstr="'{in_dir}'",
         position=-1,
         help=("The directory containing the DICOMs to be converted"),
@@ -124,7 +122,7 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
         argstr="-o '{out_dir}'",
         help="output directory",
     )
-    filename: str = shell.arg(
+    filename: str | None = shell.arg(
         argstr="-f '{filename}'",
         help="The output name for the file",
         default="out_file",
@@ -320,7 +318,7 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             # requires=[("bids", "y")],  # FIXME: should be either 'y' or 'o'
             callable=dcm2niix_out_bvec,
         )
-        out_files: list[File] = shell.out(
+        out_files: list[Nifti1 | NiftiGz | Json | Bval | Bvec] = shell.out(
             help=(
                 "all output files in a list, including files disambiguated "
                 "by their suffixes (e.g. echoes, phase-maps, etc... see "
