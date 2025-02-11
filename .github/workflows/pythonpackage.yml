@@ -46,6 +46,8 @@ jobs:
         pip install ${{ matrix.pip-flags }} ".[dev]"
         python -c "import pydra.tasks.$SUBPACKAGE as m; print(f'{m.__name__} {m.__version__} @ {m.__file__}')"
         python -c "import pydra as m; print(f'{m.__name__} {m.__version__} @ {m.__file__}')"
+    - name: Install development Pydra
+      run: pip install --no-deps git+https://github.com/nipype/pydra.git@new-syntax
 
   test:
     runs-on: ubuntu-latest
