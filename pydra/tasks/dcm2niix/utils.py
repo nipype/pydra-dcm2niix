@@ -1,25 +1,43 @@
 import attrs
 from pathlib import Path
+import typing as ty
 from pydra.engine.specs import ShellDef, ShellOutputs
-from fileformats.generic import File, Directory
+from fileformats.generic import File, Directory, FileSet
+from fileformats.application import Json
+from fileformats.medimage import Nifti1, NiftiGz, Bvec, Bval
 from pydra.design import shell
 
 
-def out_file_path(out_dir, filename, file_postfix, ext):
+FS = ty.TypeVar("FS", bound=FileSet)
+
+
+def get_out_file(
+    out_dir: Path,
+    fileformat: ty.Type[FS],
+    filename: str,
+    file_postfix: str | None,
+    required: bool = False,
+) -> FS | None:
     """Attempting to handle the different suffixes that are appended to filenames
     created by Dcm2niix (see https://github.com/rordenlab/dcm2niix/blob/master/FILENAMING.md)
     """
 
-    fpath = Path(out_dir) / (filename + (file_postfix if file_postfix else "") + ext)
+    assert fileformat.ext, f"File format {fileformat} does not have an extension"
+
+    fpath = Path(out_dir) / (
+        filename + (file_postfix if file_postfix else "") + fileformat.ext
+    )
     fpath = fpath.absolute()
 
     # Check to see if multiple echos exist in the DICOM dataset
-    if not fpath.exists():
-        if file_postfix is not None:  # NB: doesn't match attrs.NOTHING
+    if fpath.exists():
+        fileset = fileformat(fpath)
+    else:
+        if required:
             neighbours = [
-                str(p) for p in fpath.parent.iterdir() if p.name.endswith(ext)
+                p for p in fpath.parent.iterdir() if p.name.endswith(fileformat.ext)
             ]
-            if len(neighbours) == 1 and file_postfix is attrs.NOTHING:
+            if len(neighbours) == 1:
                 fpath = neighbours[0]
             else:
                 raise ValueError(
@@ -29,33 +47,51 @@ def out_file_path(out_dir, filename, file_postfix, ext):
                     "list of postfixes that dcm2niix produces and provide an appropriate "
                     "postfix, or set postfix to None to ignore matching a single file and use "
                     "the list returned in 'out_files' instead. Found the following files "
-                    "with matching extensions:\n" + "\n".join(neighbours)
+                    "with matching extensions:\n"
+                    + "\n".join(str(p) for p in neighbours)
                 )
         else:
-            fpath = attrs.NOTHING  # Did not find output path and
-
-    return fpath
-
-
-def dcm2niix_out_file(out_dir, filename, file_postfix, compress):
-    ext = ".nii"
-    # If compressed, append the zip extension
-    if compress in ("y", "o", "i"):
-        ext += ".gz"
-
-    return out_file_path(out_dir, filename, file_postfix, ext)
+            fileset = None  # Did not find output path and
+    return fileset
 
 
-def dcm2niix_out_json(out_dir, filename, file_postfix, bids):
+def dcm2niix_out_file(
+    out_dir: Path, filename: str, file_postfix: str, compress: str
+) -> Nifti1 | NiftiGz:
+    fileformat: ty.Type[Nifti1 | NiftiGz] = (
+        NiftiGz if compress in ("y", "o", "i") else Nifti1
+    )
+    return get_out_file(out_dir, fileformat, filename, file_postfix, True)  # type: ignore[return-value]
+
+
+def dcm2niix_out_json(
+    out_dir: Path, filename: str, file_postfix: str, bids: str
+) -> Json | None:
     # Append echo number of NIfTI echo to select is provided
-    if bids is attrs.NOTHING or bids in ("y", "o"):
-        fpath = out_file_path(out_dir, filename, file_postfix, ".json")
-    else:
-        fpath = attrs.NOTHING
-    return fpath
+    if bids in ("y", "o"):
+        return get_out_file(out_dir, Json, filename, file_postfix)
+    return None
 
 
-def dcm2niix_out_files(out_dir, filename):
+def dcm2niix_out_bvec(
+    out_dir: Path, filename: str, file_postfix: str, bids: str
+) -> Bvec | None:
+    # Append echo number of NIfTI echo to select is provided
+    if bids in ("y", "o"):
+        return get_out_file(out_dir, Bvec, filename, file_postfix)
+    return None
+
+
+def dcm2niix_out_bval(
+    out_dir: Path, filename: str, file_postfix: str, bids: str
+) -> Bval | None:
+    # Append echo number of NIfTI echo to select is provided
+    if bids in ("y", "o"):
+        return get_out_file(out_dir, Bval, filename, file_postfix)
+    return None
+
+
+def dcm2niix_out_files(out_dir: Path, filename: str) -> list[str]:
     return [
         str(p.absolute())
         for p in Path(out_dir).iterdir()
@@ -83,7 +119,8 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
         position=-1,
         help=("The directory containing the DICOMs to be converted"),
     )
-    out_dir: Path = shell.arg(
+    out_dir: Path | None = shell.arg(
+        default=None,
         argstr="-o '{out_dir}'",
         help="output directory",
     )
@@ -92,7 +129,8 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
         help="The output name for the file",
         default="out_file",
     )
-    file_postfix: str = shell.arg(
+    file_postfix: str | None = shell.arg(
+        default=None,
         help=(
             "The postfix appended to the output filename. Used to select which "
             "of the disambiguated nifti files created by dcm2niix to return "
@@ -104,7 +142,8 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "output files returned in 'out_files' instead."
         ),
     )
-    compress: str = shell.arg(
+    compress: str | None = shell.arg(
+        default=None,
         argstr="-z {compress}",
         allowed_values=("y", "o", "i", "n", "3"),
         help=(
@@ -112,37 +151,45 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "i=internal:miniz, n=no, 3=no,3D]"
         ),
     )
-    compression_level: int = shell.arg(
+    compression_level: int | None = shell.arg(
+        default=None,
         argstr="-{compression_level}",
         allowed_values=tuple(range(1, 10)),
         help="gz compression level ",
     )
-    adjacent: str = shell.arg(argstr="-a {adjacent}", help="adjacent DICOMs ")
+    adjacent: str | None = shell.arg(
+        default=None, argstr="-a {adjacent}", help="adjacent DICOMs "
+    )
     bids: str = shell.arg(
+        default="y",
         argstr="-b {bids}",
         allowed_values=("y", "n", "o"),
         help="BIDS sidecar  [o=only: no NIfTI]",
     )
-    anonymize_bids: str = shell.arg(
+    anonymize_bids: str | None = shell.arg(
+        default=None,
         argstr="-ba {anonymize_bids}",
         allowed_values=("y", "n"),
         help="anonymize BIDS ",
     )
     store_comments: bool = shell.arg(
-        argstr="-c", help="comment stored in NIfTI aux_file "
+        default=False, argstr="-c", help="comment stored in NIfTI aux_file "
     )
-    search_depth: int = shell.arg(
+    search_depth: int | None = shell.arg(
+        default=None,
         argstr="-d {search_depth}",
         help=(
             "directory search depth. Convert DICOMs in " "sub-folders of " "in_folder? "
         ),
     )
-    export_nrrd: str = shell.arg(
+    export_nrrd: str | None = shell.arg(
+        default=None,
         argstr="-e {export_nrrd}",
         allowed_values=("y", "n"),
         help="export as NRRD instead of NIfTI ",
     )
-    generate_defaults: str = shell.arg(
+    generate_defaults: str | None = shell.arg(
+        default=None,
         argstr="-g {generate_defaults}",
         allowed_values=("y", "n", "o", "i"),
         help=(
@@ -150,12 +197,14 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "defaults; i=ignore: reset defaults]"
         ),
     )
-    ignore_derived: str = shell.arg(
+    ignore_derived: str | None = shell.arg(
+        default=None,
         argstr="-i {ignore_derived}",
         allowed_values=("y", "n"),
         help="ignore derived, localizer and 2D images ",
     )
-    losslessly_scale: str = shell.arg(
+    losslessly_scale: str | None = shell.arg(
+        default=None,
         argstr="-l {losslessly_scale}",
         allowed_values=("y", "n", "o"),
         help=(
@@ -163,7 +212,8 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "[yes=scale, no=no, but uint16->int16, o=original]"
         ),
     )
-    merge_2d: int = shell.arg(
+    merge_2d: int | None = shell.arg(
+        default=None,
         argstr="-m {merge_2d}",
         allowed_values=("y", "n", "0", "1", "2"),
         help=(
@@ -171,36 +221,45 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "exposure, etc.  no, yes, auto"
         ),
     )
-    only: int = shell.arg(
+    only: int | None = shell.arg(
+        default=None,
         argstr="-n {only}",
         help=("only convert this series CRC number - can be used up " "to 16 times"),
     )
-    philips_scaling: str = shell.arg(
+    philips_scaling: str | None = shell.arg(
+        default=None,
         argstr="-p {philips_scaling}",
         help="Philips precise float (not display) scaling",
     )
-    rename_instead: str = shell.arg(
+    rename_instead: str | None = shell.arg(
+        default=None,
         argstr="-r {rename_instead}",
         allowed_values=("y", "n"),
         help="rename instead of convert DICOMs ",
     )
-    single_file_mode: str = shell.arg(
+    single_file_mode: str | None = shell.arg(
+        default=None,
         argstr="-s {single_file_mode}",
         allowed_values=("y", "n"),
         help=("single file mode, do not convert other images in " "folder "),
     )
-    private_text_notes: str = shell.arg(
+    private_text_notes: str | None = shell.arg(
+        default=None,
         argstr="-t {private_text_notes}",
         allowed_values=("y", "n"),
         help=("text notes includes private patient details"),
     )
-    up_to_date_check: bool = shell.arg(argstr="-u", help="up-to-date check")
-    verbose: str = shell.arg(
+    up_to_date_check: bool = shell.arg(
+        default=False, argstr="-u", help="up-to-date check"
+    )
+    verbose: str | None = shell.arg(
+        default=None,
         argstr="-v {verbose}",
         allowed_values=("y", "n", "0", "1", "2"),
         help="verbose  no, yes, logorrheic",
     )
-    name_conflicts: int = shell.arg(
+    name_conflicts: int | None = shell.arg(
+        default=None,
         argstr="-w {name_conflicts}",
         allowed_values=tuple(range(3)),
         help=(
@@ -208,7 +267,8 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "[0=skip duplicates, 1=overwrite, 2=add suffix]"
         ),
     )
-    crop_3d: str = shell.arg(
+    crop_3d: str | None = shell.arg(
+        default=None,
         argstr="-x {crop_3d}",
         allowed_values=("y", "n", "i"),
         help=(
@@ -216,22 +276,26 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             "rotate 3D acquistions)"
         ),
     )
-    big_endian: str = shell.arg(
+    big_endian: str | None = shell.arg(
+        default=None,
         argstr="--big-endian {big_endian}",
         allowed_values=("y", "n", "o"),
         help="byte order  [y=big-end, n=little-end, o=optimal/native]",
     )
-    progress: str = shell.arg(
+    progress: str | None = shell.arg(
+        default=None,
         argstr="--progress {progress}",
         allowed_values=("y", "n"),
         help="Slicer format progress information ",
     )
-    terse: bool = shell.arg(argstr="--terse", help="omit filename post-fixes ")
-    version: bool = shell.arg(argstr="--version", help="report version")
-    xml: bool = shell.arg(argstr="--xml", help="Slicer format features")
+    terse: bool = shell.arg(
+        default=False, argstr="--terse", help="omit filename post-fixes "
+    )
+    version: bool = shell.arg(default=False, argstr="--version", help="report version")
+    xml: bool = shell.arg(default=False, argstr="--xml", help="Slicer format features")
 
     class Outputs(ShellOutputs):
-        out_file: File = shell.out(
+        out_file: Nifti1 | NiftiGz = shell.out(
             help=(
                 "output NIfTI image. If multiple nifti files are created (e.g. for "
                 "different echoes), then the 'file_postfix' input can be provided to "
@@ -241,18 +305,20 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
             ),
             callable=dcm2niix_out_file,
         )
-        out_json: File = shell.out(
+        out_json: Json | None = shell.out(
             help="output BIDS side-car JSON corresponding to 'out_file'",
-            # requires=[("bids", 'y')],  FIXME: should be either 'y' or 'o'
+            # requires=[("bids", "y")],  # FIXME: should be either 'y' or 'o'
             callable=dcm2niix_out_json,
         )
-        out_bval: File = shell.outarg(
+        out_bval: Bval | None = shell.out(
             help="output dMRI b-values in FSL format",
-            path_template="{out_dir}/{filename}.bval",
+            # requires=[("bids", "y")],  # FIXME: should be either 'y' or 'o'
+            callable=dcm2niix_out_bval,
         )
-        out_bvec: File = shell.outarg(
+        out_bvec: Bvec | None = shell.out(
             help="output dMRI b-bectors in FSL format",
-            path_template="{out_dir}/{filename}.bvec",
+            # requires=[("bids", "y")],  # FIXME: should be either 'y' or 'o'
+            callable=dcm2niix_out_bvec,
         )
         out_files: list[File] = shell.out(
             help=(
