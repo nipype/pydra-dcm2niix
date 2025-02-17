@@ -7,7 +7,7 @@ name = "pydra-dcm2niix"
 description = "pydra-dcm2niix contains Pydra task specifications for the Dcm2niix converter"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["fileformats>=0.15a2", "pydra >=0.25"]
+dependencies = ["fileformats>=0.15a2", "pydra >=0.24"]
 license = { file = "LICENSE" }
 authors = [{ name = "Thomas G. Close", email = "tom.g.close@gmail.com" }]
 maintainers = [{ name = "Thomas G. Close", email = "tom.g.close@gmail.com" }]
