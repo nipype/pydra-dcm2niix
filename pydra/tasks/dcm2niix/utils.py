@@ -1,10 +1,8 @@
 from pathlib import Path
 import typing as ty
-from pydra.engine.specs import ShellDef, ShellOutputs
 from fileformats.application import Json
 from fileformats.medimage import DicomDir, Nifti1, NiftiGz, Bvec, Bval
-from pydra.design import shell
-
+from pydra.compose import shell
 
 FS = ty.TypeVar("FS", bound=Nifti1 | NiftiGz | Json | Bval | Bvec)
 
@@ -98,7 +96,7 @@ def dcm2niix_out_files(out_dir: Path, filename: str) -> list[str]:
 
 
 @shell.define
-class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
+class Dcm2Niix(shell.Task["Dcm2Niix.Outputs"]):
     """
     Example
     -------
@@ -292,7 +290,7 @@ class Dcm2Niix(ShellDef["Dcm2Niix.Outputs"]):
     version: bool = shell.arg(default=False, argstr="--version", help="report version")
     xml: bool = shell.arg(default=False, argstr="--xml", help="Slicer format features")
 
-    class Outputs(ShellOutputs):
+    class Outputs(shell.Outputs):
         out_file: Nifti1 | NiftiGz = shell.out(
             help=(
                 "output NIfTI image. If multiple nifti files are created (e.g. for "
