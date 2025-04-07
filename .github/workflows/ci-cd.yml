@@ -37,11 +37,6 @@ jobs:
     - name: Install task package
       run: |
         pip install ".[test]"
-    - name: Install development Pydra and fileformats-medimage
-      run: |
-        pip uninstall pydra fileformats-medimage -y
-        pip install --no-deps git+https://github.com/nipype/pydra.git@develop
-        pip install --no-deps git+https://github.com/arcanaframework/fileformats-medimage.git@updated-pydra-imports
     - name: Test with pytest
       run: |
         pytest -sv --cov pydra.tasks.$SUBPACKAGE --cov-report xml
