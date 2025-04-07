@@ -138,3 +138,6 @@ dmypy.json
 upload-token.txt
 
 .DS_Store
+
+# Created by hatch-vcs
+/pydra/tasks/dcm2niix/_version.py
